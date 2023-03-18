@@ -16,10 +16,6 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.metrics import silhouette_score
 
 
-# Create a MinMaxScaler object to scale numerical columns later
-scaler = MinMaxScaler()
-
-
 # Function to read the data from the CSV file
 def read_data(filepath):
     """
@@ -176,10 +172,10 @@ def remove_outliers(data):
     Returns:
         A pandas DataFrame without outliers.
     """
-    Q1 = data['sale_price'].quantile(0.25)
-    Q3 = data['sale_price'].quantile(0.75)
-    IQR = Q3 - Q1
-    data = data[~((data['sale_price'] < (Q1 - 1.5 * IQR)) | (data['sale_price'] > (Q3 + 1.5 * IQR)))]
+    q1 = data['sale_price'].quantile(0.25)
+    q3 = data['sale_price'].quantile(0.75)
+    iqr = q3 - q1
+    data = data[~((data['sale_price'] < (q1 - 1.5 * iqr)) | (data['sale_price'] > (q3 + 1.5 * iqr)))]
     return data
 
 
@@ -209,6 +205,9 @@ def normalize_numerical_columns(data, numerical_cols):
     Returns:
         A pandas DataFrame with normalized numerical columns.
     """
+
+    # Create a MinMaxScaler object to scale numerical columns later
+    scaler = MinMaxScaler()
 
     data[numerical_cols] = data[numerical_cols].replace(',', '', regex=True)
     data[numerical_cols] = data[numerical_cols].astype(float)
@@ -614,7 +613,7 @@ def display_summary_of_missing_data(data):
     plt.show()
 
 
-def select_features_with_rfe(data, n_features=3):
+def select_features_with_rfe(data, n_features=5):
     """
     Selects the top `n_features` number of features with Recursive Feature Elimination (RFE).
     RFE is a feature selection method that recursively selects features by ranking them
@@ -931,23 +930,23 @@ def compare_models_graphically(data, cluster_models, X_test_list, y_test_list):
 
 if __name__ == '__main__':
     # Read the data and preprocess it
-    filepath = 'C:/Users/Joseph/PycharmProjects/BigDataAssignment/Manhattan12.csv'
-    data = preprocess_data_for_part_1(filepath)
+    path = 'C:/Users/Joseph/PycharmProjects/BigDataAssignment/Manhattan12.csv'
+    manhattan_data = preprocess_data_for_part_1(path)
 
     ''' PART 1 '''
     # Visualising data
     # Plot different visualizations of the data
-    visualize_prices_across_neighborhood(data)
-    visualize_prices_over_time(data)
-    visualize_scatter_matrix(data)
-    visualize_corr_matrix(data)
-    visualize_boxplot(data)
-    visualize_violinplot(data)
+    visualize_prices_across_neighborhood(manhattan_data)
+    visualize_prices_over_time(manhattan_data)
+    visualize_scatter_matrix(manhattan_data)
+    visualize_corr_matrix(manhattan_data)
+    visualize_boxplot(manhattan_data)
+    visualize_violinplot(manhattan_data)
 
     # Select predictor variables
-    X = select_predictor_variables(data)
+    X = select_predictor_variables(manhattan_data)
     # Set the target variable
-    y = data['logprices']
+    y = manhattan_data['logprices']
     # Fit the linear model
     model = fit_linear_model(X, y)
     # Split the data into training and test sets
@@ -967,7 +966,7 @@ if __name__ == '__main__':
 
     ''' PART 2 Improved model '''
     # Read data and preprocess the data
-    data_2 = preprocess_data_for_part_2(filepath)
+    data_2 = preprocess_data_for_part_2(path)
 
     # Visualize the correlation matrix for the improved data
     visualize_corr_matrix(data_2)
