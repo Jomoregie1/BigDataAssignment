@@ -483,11 +483,11 @@ def select_predictor_variables(data):
     Returns:
     pandas.DataFrame: The DataFrame containing the predictor variables.
     """
-    X = data[['total_units', 'land_square_feet', 'gross_square_feet', 'year_built']]
-    return sm.add_constant(X)
+    x = data[['total_units', 'land_square_feet', 'gross_square_feet', 'year_built']]
+    return sm.add_constant(x)
 
 
-def fit_linear_model(X, y):
+def fit_linear_model(x, y):
     """
     Fits a linear regression model to the input data.
 
@@ -498,10 +498,10 @@ def fit_linear_model(X, y):
     Returns:
     statsmodels.regression.linear_model.RegressionResultsWrapper: The results of the linear regression.
     """
-    return sm.OLS(y, X).fit()
+    return sm.OLS(y, x).fit()
 
 
-def split_data(X, y, test_size=0.3, random_state=42):
+def split_data(x, y, test_size=0.3, random_state=42):
     """
     Splits the input data into training and testing sets.
 
@@ -514,10 +514,10 @@ def split_data(X, y, test_size=0.3, random_state=42):
     Returns:
     tuple: A tuple containing the training and testing sets for the predictor variables and target variable.
     """
-    return train_test_split(X, y, test_size=test_size, random_state=random_state)
+    return train_test_split(x, y, test_size=test_size, random_state=random_state)
 
 
-def train_linear_regression_model(X_train, y_train):
+def train_linear_regression_model(x_train, y_train):
     """
     Trains a linear regression model on the input data.
 
@@ -529,11 +529,11 @@ def train_linear_regression_model(X_train, y_train):
     sklearn.linear_model.LinearRegression: The trained linear regression model.
     """
     lr_model = LinearRegression()
-    lr_model.fit(X_train, y_train)
+    lr_model.fit(x_train, y_train)
     return lr_model
 
 
-def predict_test_data(lr_model, X_test):
+def predict_test_data(lr_model, x_test):
     """
     Predicts the target variable using the fitted linear regression model and test data.
 
@@ -544,7 +544,7 @@ def predict_test_data(lr_model, X_test):
     Returns:
     - An array of predicted target values.
     """
-    return lr_model.predict(X_test)
+    return lr_model.predict(x_test)
 
 
 def calculate_residuals(y_test, y_pred):
@@ -561,7 +561,7 @@ def calculate_residuals(y_test, y_pred):
     return y_test - y_pred
 
 
-def calculate_cv_scores(lr_model, X, y, cv=5):
+def calculate_cv_scores(lr_model, x, y, cv=5):
     """
     Calculates the cross-validation scores of a linear regression model.
 
@@ -574,7 +574,7 @@ def calculate_cv_scores(lr_model, X, y, cv=5):
     Returns:
     - An array of cross-validation scores.
     """
-    return cross_val_score(lr_model, X, y, cv=cv)
+    return cross_val_score(lr_model, x, y, cv=cv)
 
 
 def plot_residuals_histogram(residuals):
@@ -633,8 +633,8 @@ def select_features_with_rfe(data, n_features=5):
         list: A list of the top `n_features` selected features based on RFE.
     """
 
-    # Split data into X and y
-    X = data.select_dtypes(include=np.number).drop('logprices', axis=1)
+    # Split data into x and y
+    x = data.select_dtypes(include=np.number).drop('logprices', axis=1)
     y = data['logprices']
 
     # Define estimator (linear regression)
@@ -644,12 +644,12 @@ def select_features_with_rfe(data, n_features=5):
     rfe = RFE(estimator, n_features_to_select=n_features)
 
     # Fit RFE to data
-    rfe.fit(X, y)
+    rfe.fit(x, y)
 
-    return X.columns[rfe.support_]
+    return x.columns[rfe.support_]
 
 
-def random_forest_regression(X_train, y_train, X_test, y_test, n_estimators=100, max_depth=None):
+def random_forest_regression(x_train, y_train, x_test, y_test, n_estimators=100, max_depth=None):
     """
     Trains a Random Forest regression model using the training data (X_train and y_train).
     Returns the trained model and the mean squared error on the test set.
@@ -659,15 +659,15 @@ def random_forest_regression(X_train, y_train, X_test, y_test, n_estimators=100,
     model = RandomForestRegressor(n_estimators=n_estimators, max_depth=max_depth, random_state=42)
 
     # Train the model on the training data
-    model.fit(X_train, y_train)
+    model.fit(x_train, y_train)
 
     # Make predictions on the test set
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(x_test)
 
     # Calculate the mean squared error on the test set
     mse = mean_squared_error(y_test, y_pred)
 
-    cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+    cv_scores = cross_val_score(model, x_train, y_train, cv=5)
     mean_cv_score = cv_scores.mean()
 
     print("Mean CV Score:", mean_cv_score)
@@ -701,11 +701,11 @@ def bayesian_Optimization(data, target_name, feature_names):
     """
 
     # Select the features to use in the model
-    X = data[feature_names]
+    x = data[feature_names]
     y = data[target_name]
 
     # Split the data into training and test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    x, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=42)
 
     # Define the search space for the hyperparameters
     pbounds = {'n_estimators': (10, 200),
@@ -729,7 +729,7 @@ def bayesian_Optimization(data, target_name, feature_names):
     print("Best CV Score:", best_cv_score)
 
     # Train the final model with the best hyperparameters
-    final_model, final_mse, y_pred = random_forest_regression(X_train, y_train, X_test, y_test,
+    final_model, final_mse, y_pred = random_forest_regression(x, y_train, x_test, y_test,
                                                               n_estimators=int(best_params['n_estimators']),
                                                               max_depth=int(best_params['max_depth']))
 
@@ -837,38 +837,37 @@ def split_and_train_clusters(cluster_dataframes, target='logprices'):
           target: Name of the target variable. Default is 'logprices'.
 
       Returns:
-          X_train_list: List of training sets for each cluster.
-          X_test_list: List of testing sets for each cluster.
+          x_train_list: List of training sets for each cluster.
+          x_test_list: List of testing sets for each cluster.
           y_train_list: List of target values for the training sets for each cluster.
           y_test_list: List of target values for the testing sets for each cluster.
           lr_models: List of trained linear regression models for each cluster.
       """
-    X_train_list, X_test_list, y_train_list, y_test_list, lr_models = [], [], [], [], []
+    x_train_list, x_test_list, y_train_list, y_test_list, lr_models = [], [], [], [], []
 
     for cluster_df in cluster_dataframes:
-        X = cluster_df.drop([target, 'cluster'], axis=1)
+        x = cluster_df.drop([target, 'cluster'], axis=1)
         y = cluster_df[target]
-        X_train, X_test, y_train, y_test = split_data(X, y)
-        lr_model = train_linear_regression_model(X_train, y_train)
+        x_train, x_test, y_train, y_test = split_data(x, y)
+        lr_model = train_linear_regression_model(x_train, y_train)
 
-        X_train_list.append(X_train)
-        X_test_list.append(X_test)
+        x_train_list.append(x_train)
+        x_test_list.append(x_test)
         y_train_list.append(y_train)
         y_test_list.append(y_test)
         lr_models.append(lr_model)
 
-    return X_train_list, X_test_list, y_train_list, y_test_list, lr_models
+    return x_train_list, x_test_list, y_train_list, y_test_list, lr_models
 
 
-def evaluate_cluster_models(lr_models, X_test_list, y_test_list):
+def evaluate_cluster_models(lr_models, x_test_list, y_test_list):
     """
-    Evaluate the cluster-based linear regression models by computing the mean squared error (MSE) and mean absolute error
-    (MAE) for each cluster model and returning the results as lists.
+    Evaluate the cluster-based linear regression models by computing the mean squared error (MSE) and mean absolute
+    error (MAE) for each cluster model and returning the results as lists.
 
-    Args:
-        lr_models (list): A list of trained linear regression models, one for each cluster.
-        X_test_list (list): A list of testing data for each cluster, with one array of predictor variables for each model.
-        y_test_list (list): A list of testing data for each cluster, with one array of target variables for each model.
+    Args: lr_models (list): A list of trained linear regression models, one for each cluster. X_test_list (list): A
+    list of testing data for each cluster, with one array of predictor variables for each model. y_test_list (list):
+    A list of testing data for each cluster, with one array of target variables for each model.
 
     Returns:
         tuple: A tuple containing two lists, the first containing the MSE for each cluster model and the second
@@ -878,14 +877,14 @@ def evaluate_cluster_models(lr_models, X_test_list, y_test_list):
     mse_list, mae_list = [], []
 
     for i, lr_model in enumerate(lr_models):
-        y_pred = predict_test_data(lr_model, X_test_list[i])
+        y_pred = predict_test_data(lr_model, x_test_list[i])
         mse_list.append(mean_squared_error(y_test_list[i], y_pred))
         mae_list.append(mean_absolute_error(y_test_list[i], y_pred))
 
     return mse_list, mae_list
 
 
-def compare_models_graphically(data, cluster_models, X_test_list, y_test_list):
+def compare_models_graphically(data, cluster_models, x_test_list, y_test_list):
     """
         Compare the performance of cluster-based linear regression models with an overall linear regression model
         using a scatter plot of true values against predicted values.
@@ -896,27 +895,27 @@ def compare_models_graphically(data, cluster_models, X_test_list, y_test_list):
         X_test_list (list): A list of test feature sets for each cluster.
         y_test_list (list): A list of test target variables for each cluster.
 
-        Returns:
-        None. Shows a scatter plot of true values against predicted values for the overall model and each cluster-based model.
-        """
+        Returns: None. Shows a scatter plot of true values against predicted values for the overall model and each
+        cluster-based model.
+    """
 
     # Split the entire dataset into training and testing sets
-    X = data.select_dtypes(include=np.number).drop('logprices', axis=1)
+    x_train = data.select_dtypes(include=np.number).drop('logprices', axis=1)
     y = data['logprices']
-    X_train, X_test, y_train, y_test = split_data(X, y)
+    x_train, x_test, y_train, y_test = split_data(x_train, y)
 
     # Train the overall linear regression model
-    lr_model = train_linear_regression_model(X_train, y_train)
+    lr_model = train_linear_regression_model(x_train, y_train)
 
     # Predict the test data
-    y_pred = predict_test_data(lr_model, X_test)
+    y_pred = predict_test_data(lr_model, x_test)
 
     # Plot the overall model
     plt.scatter(y_test, y_pred, alpha=0.3, label="Overall Model")
 
     # Plot the cluster-based models
     for i in range(len(cluster_models)):
-        y_pred_cluster = predict_test_data(cluster_models[i], X_test_list[i])
+        y_pred_cluster = predict_test_data(cluster_models[i], x_test_list[i])
         plt.scatter(y_test_list[i], y_pred_cluster, alpha=0.3, label=f"Cluster {i}")
 
     # Add diagonal line
