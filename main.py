@@ -317,7 +317,7 @@ def preprocess_data_for_part_2(filepath):
 
     # Read the data from the CSV file
     data = read_data(filepath)
-    print("********* MODEL-2  **************")
+    print("\n********* MODEL-2  **************")
     print(f'This is the shape of the data before cleaning:  {data.shape}')
 
     # Rename the columns of the DataFrame
@@ -718,13 +718,14 @@ def bayesian_Optimization(data, target_name, feature_names):
         random_state=42,
     )
 
+    print("\nFine tuning hyper-parameters..............")
     # Perform the optimization
     optimizer.maximize(init_points=5, n_iter=20)
 
     # Print the best hyperparameters and the corresponding CV score
     best_params = optimizer.max['params']
     best_cv_score = optimizer.max['target']
-    print("Best Hyperparameters:", best_params)
+    print("\nBest Hyperparameters:", best_params)
     print("Best CV Score:", best_cv_score)
 
     # Train the final model with the best hyperparameters
