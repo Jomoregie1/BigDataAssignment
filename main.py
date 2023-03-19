@@ -28,7 +28,6 @@ def read_data(filepath):
             A pandas DataFrame containing the data from the CSV file.
         """
     data = pd.read_csv(filepath, skiprows=4)
-    print(f'This is the shape of the data before cleaning:  {data.shape}')
     return data
 
 
@@ -272,6 +271,8 @@ def preprocess_data_for_part_1(filepath):
     """
     # Read the data from the CSV file
     data = read_data(filepath)
+    print("********* MODEL-1  **************")
+    print(f'This is the shape of the dataframe before cleaning:  {data.shape}')
 
     # Rename the columns of the DataFrame
     data = rename_columns(data)
@@ -286,6 +287,7 @@ def preprocess_data_for_part_1(filepath):
     data = drop_irrelevant_columns(data)
     data = remove_duplicates_and_missing_values(data)
     data = remove_outliers(data)
+    print(f'This is the shape of the dataframe after removing outliers:  {data.shape}')
     data = apply_logarithm(data)
 
     # Define the numerical columns list
@@ -315,6 +317,8 @@ def preprocess_data_for_part_2(filepath):
 
     # Read the data from the CSV file
     data = read_data(filepath)
+    print("********* MODEL-2  **************")
+    print(f'This is the shape of the data before cleaning:  {data.shape}')
 
     # Rename the columns of the DataFrame
     data = rename_columns(data)
@@ -330,7 +334,8 @@ def preprocess_data_for_part_2(filepath):
     data = remove_duplicates_and_missing_values(data)
     data = normalize_numerical_columns(data, numerical_cols)
     data = drop_irrelevant_columns(data)
-    data = dbscan_outlier_detection(data)
+    data = remove_outliers(data)
+    print(f'This is the shape of the dataframe after removing outliers:  {data.shape}')
 
     return data
 
@@ -961,6 +966,9 @@ if __name__ == '__main__':
     cv_scores = calculate_cv_scores(lr_model, X, y)
     # Print the mean cross-validation scores
     print("Mean CV Score:", cv_scores.mean())
+    # print the mean squared score
+    print(f"Final Model MSE: {mean_squared_error(y_test, y_pred)}")
+    print(f"R2_scores: {r2_score(y_test, y_pred)}")
     # Plot a histogram of the residuals.
     plot_residuals_histogram(residuals)
 
@@ -981,7 +989,9 @@ if __name__ == '__main__':
     # Calculate the silhouette score for clustering
     silhouetteScore(data_2)
 
+    # Create a KMeans object with the following hyperparameters
     kmeans = KMeans(n_clusters=3, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    # Fit the KMeans object to the data
     kmeans.fit(data_2.select_dtypes(include=np.number))
 
     # Visualize clusters with 'logprices' and 'year_built'
