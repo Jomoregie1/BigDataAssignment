@@ -334,7 +334,7 @@ def preprocess_data_for_part_2(filepath):
     data = remove_duplicates_and_missing_values(data)
     data = normalize_numerical_columns(data, numerical_cols)
     data = drop_irrelevant_columns(data)
-    data = remove_outliers(data)
+    data = dbscan_outlier_detection(data)
     print(f'This is the shape of the dataframe after removing outliers:  {data.shape}')
 
     return data
