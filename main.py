@@ -1,6 +1,8 @@
+import calendar
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.ticker import StrMethodFormatter
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.preprocessing import MinMaxScaler
 import seaborn as sns
@@ -288,6 +290,8 @@ def preprocess_data_for_part_1(filepath):
     data = remove_duplicates_and_missing_values(data)
     data = remove_outliers(data)
     print(f'This is the shape of the dataframe after removing outliers:  {data.shape}')
+    # To show the prices over time before log has been applied to the data.
+    visualize_prices_across_time(data)
     data = apply_logarithm(data)
 
     # Define the numerical columns list
@@ -342,7 +346,7 @@ def preprocess_data_for_part_2(filepath):
 
 def visualize_prices_across_neighborhood(data):
     """
-    Visualizes the average prices of properties across neighborhoods using a bar plot.
+    Visualizes the distribution of prices of properties across neighborhoods using a box plot.
 
     Args:
         data (pandas.DataFrame): The dataset containing the sale prices and neighborhoods of properties.
@@ -350,12 +354,10 @@ def visualize_prices_across_neighborhood(data):
     Returns:
         None.
     """
-    # group the dataset by neighborhood and calculate the average of the logprices for each neighborhood
-    avg_prices = data.groupby("neighborhood")["logprices"].mean().reset_index()
     plt.figure(figsize=(20, 10))
-    #  we create a bar chart
-    sns.barplot(x="neighborhood", y="logprices", data=avg_prices)
-    plt.title("Average Prices Across Neighborhoods")
+    # create a box plot
+    sns.boxplot(x="neighborhood", y="logprices", data=data)
+    plt.title("Price Distribution Across Neighborhoods")
     plt.xticks(rotation=90)
     plt.show()
 
@@ -380,30 +382,49 @@ def dbscan_outlier_detection(data, eps=0.5, min_samples=5):
     return data_clean
 
 
-def visualize_prices_over_time(data):
+def visualize_prices_across_time(data):
     """
-    Visualizes the trend of sale prices and total units over time using line plots.
+    Visualizes the average sale prices of properties over time using a line plot.
 
     Args:
-        data (pandas.DataFrame): The dataset containing the sale prices, total units, and sale dates of properties.
+        data (pandas.DataFrame): The dataset containing the sale prices and sale dates of properties.
 
     Returns:
         None.
     """
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6))
+    # group the data by year and month and calculate average sale price
+    avg_prices = data.groupby([data['sale_date'].dt.year.rename('year'), data['sale_date'].dt.month.rename('month')])[
+        'sale_price'].mean().reset_index()
 
-    sns.lineplot(x="sale_date", y="logprices", data=data, ax=ax1)
-    sns.lineplot(x="sale_date", y="total_units", data=data, ax=ax2)
+    # convert numerical month values to month names
+    avg_prices['month'] = avg_prices['month'].apply(lambda x: calendar.month_name[x])
 
-    ax1.set_title('Log Prices over Time')
-    ax1.set_xlabel('Sale Date')
-    ax1.set_ylabel('Log Prices')
+    # specify the order of the months
+    month_order = list(calendar.month_name)[1:]
 
-    ax2.set_title('Total Units over Time')
-    ax2.set_xlabel('Sale Date')
-    ax2.set_ylabel('Total Units')
+    # convert month column to categorical data type with specified order
+    avg_prices['month'] = pd.Categorical(avg_prices['month'], categories=month_order, ordered=True)
 
-    plt.tight_layout()
+    # sort the data by year and month
+    # avg_prices = avg_prices.sort_values(['year', 'month'])
+
+    # plot the data using a line plot
+    plt.figure(figsize=(20, 10))
+    sns.lineplot(data=avg_prices, x="month", y="sale_price", hue="year", marker="o")
+    plt.title("Average Sale Prices Across Time")
+    plt.xlabel("Month")
+    plt.ylabel("Average Sale Price")
+    plt.xticks(range(0, 12), calendar.month_name[1:13], rotation=45)
+
+    # set the formatter for the y-axis to ScalarFormatter
+    formatter = StrMethodFormatter('£{x:,.0f}')
+    plt.gca().yaxis.set_major_formatter(formatter)
+
+    # Display the gridlines
+    plt.grid(True)
+
+    plt.gca().set_ylabel('Average sale price', labelpad=20)
+
     plt.show()
 
 
@@ -417,9 +438,34 @@ def visualize_scatter_matrix(data):
     Returns:
     None.
     """
+
+    sns.set_style('ticks')
+
     scatter_cols = ['total_units', 'land_square_feet', 'gross_square_feet', 'logprices']
-    pd.plotting.scatter_matrix(data[scatter_cols], diagonal='hist')
+    pd.plotting.scatter_matrix(data[scatter_cols], diagonal='hist', hist_kwds=None, grid=False)
+
     plt.show()
+
+
+def visualise_regression_plot(data):
+    """
+       Visualize a regression line between log prices and each numerical column in the input data.
+       Args:
+           data (pandas.DataFrame): The input data to visualize.
+       Returns:
+           None.
+       Raises:
+           None.
+       """
+    # Select only the numerical columns in your data
+    numerical_cols = data.select_dtypes(include=np.number).columns
+
+    # Plot a regression line between log prices and each numerical column
+    for col in numerical_cols:
+        if col != 'logprices':  # Exclude logprices from the plot
+            sns.regplot(x='logprices', y=col, data=data)
+            plt.title(f"Regression plot against logprice and {col}")
+            plt.show()
 
 
 def visualize_corr_matrix(data):
@@ -457,6 +503,7 @@ def visualize_boxplot(data):
     plt.show()
 
 
+# TODO: what can you actually intrepret from this graph
 def visualize_violinplot(data):
     """
     Plots a violin plot for the specified column of the input DataFrame.
@@ -780,6 +827,28 @@ def silhouetteScore(data):
     return silhouette_scores
 
 
+def visualize_silhouette_scores(scores):
+    """
+     Plots the silhouette scores for different numbers of clusters, ranging from 2 to 10.
+
+     The silhouette score is a measure of how well each data point fits within its cluster, taking into
+     account the average distance between the point and all other points within the same cluster, as well
+     as the average distance between the point and all other points in the nearest neighboring cluster.
+     A higher silhouette score indicates better cluster cohesion and separation.
+
+     Args:
+         scores (list): A list of silhouette scores, where the index (plus 2) corresponds to the number of clusters.
+
+     Returns:
+         None.
+     """
+    plt.plot(range(2, 11), scores)
+    plt.xlabel('Number of Clusters')
+    plt.ylabel('Silhouette Score')
+    plt.title('Silhouette Scores for Different Numbers of Clusters')
+    plt.show()
+
+
 def visualize_clusters(data, kmeans_labels, x_var, y_var, title, xlabel, ylabel):
     """
     Creates a scatter plot to visualize the clusters in a KMeans clustering model.
@@ -935,15 +1004,15 @@ def compare_models_graphically(data, cluster_models, x_test_list, y_test_list):
 
 if __name__ == '__main__':
     # Read the data and preprocess it
-    path = 'C:/Users/Joseph/PycharmProjects/BigDataAssignment/Manhattan12.csv'
+    path = 'Manhattan12.csv'
     manhattan_data = preprocess_data_for_part_1(path)
 
     ''' PART 1 '''
     # Visualising data
     # Plot different visualizations of the data
     visualize_prices_across_neighborhood(manhattan_data)
-    visualize_prices_over_time(manhattan_data)
     visualize_scatter_matrix(manhattan_data)
+    visualise_regression_plot(manhattan_data)
     visualize_corr_matrix(manhattan_data)
     visualize_boxplot(manhattan_data)
     visualize_violinplot(manhattan_data)
@@ -987,23 +1056,24 @@ if __name__ == '__main__':
     # Perform Bayesian Optimization for hyperparameter tuning
     bayesian_Optimization(data_2, 'logprices', selected_features_list)
     # Calculate the silhouette score for clustering
-    silhouetteScore(data_2)
-
+    scores = silhouetteScore(data_2)
+    # Draws the silhouette scores for justification
+    visualize_silhouette_scores(scores)
     # Create a KMeans object with the following hyperparameters
-    kmeans = KMeans(n_clusters=3, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    kmeans = KMeans(n_clusters=2, init='k-means++', max_iter=300, n_init=10, random_state=0)
     # Fit the KMeans object to the data
     kmeans.fit(data_2.select_dtypes(include=np.number))
 
     # Visualize clusters with 'logprices' and 'year_built'
-    visualize_clusters(data_2, kmeans.labels_, 'logprices', 'year_built', 'K-Means Clustering Results (K=3)',
+    visualize_clusters(data_2, kmeans.labels_, 'logprices', 'year_built', 'K-Means Clustering Results (K=2)',
                        'logprices', 'year_built')
 
     # Visualize clusters with 'logprices' and 'total_units'
-    visualize_clusters(data_2, kmeans.labels_, 'logprices', 'total_units', 'K-Means Clustering Results (K=3)',
+    visualize_clusters(data_2, kmeans.labels_, 'logprices', 'total_units', 'K-Means Clustering Results (K=2)',
                        'logprices', 'total_units')
 
     # Visualize clusters with 'year_built' and 'gross_square_feet'
-    visualize_clusters(data_2, kmeans.labels_, 'year_built', 'gross_square_feet', 'K-Means Clustering Results (K=3)',
+    visualize_clusters(data_2, kmeans.labels_, 'year_built', 'gross_square_feet', 'K-Means Clustering Results (K=2)',
                        'year_built', 'gross_square_feet')
 
     # Add cluster labels to the dataset and create separate dataframes for each cluster
@@ -1022,9 +1092,10 @@ if __name__ == '__main__':
     # Allows me to compare between to my regression model obtained in part 2.1 graphically.
     compare_models_graphically(data_2, lr_models, X_test_list, y_test_list)
 
-# TODO 1- Box plot for average prices across neighborhoods
-# TODO 2- average sale prices over time each month and Total units over time
-# TODO 3- regression plot
-# TODO 4- a graph to show correlation between numerical values
-# TODO 5- draw silhouette graph
+# TODO 1- Box plot for average prices across neighborhoods - possibly using log proces instead of sale prices
+# TODO - See if you can improve residual and predicted plot too understand why the data is in clusters
+# TODO 2- average sale prices over time each month and Total units over time (done)
+# TODO 3- regression plot (done)
+# TODO 4- a graph to show correlation between numerical values (done)
+# TODO 5- draw silhouette graph (done)
 # TODO 6- show end cluster data
