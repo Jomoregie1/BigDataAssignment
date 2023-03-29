@@ -1092,10 +1092,3 @@ if __name__ == '__main__':
     # Allows me to compare between to my regression model obtained in part 2.1 graphically.
     compare_models_graphically(data_2, lr_models, X_test_list, y_test_list)
 
-# TODO 1- Box plot for average prices across neighborhoods - possibly using log proces instead of sale prices
-# TODO - See if you can improve residual and predicted plot too understand why the data is in clusters
-# TODO 2- average sale prices over time each month and Total units over time (done)
-# TODO 3- regression plot (done)
-# TODO 4- a graph to show correlation between numerical values (done)
-# TODO 5- draw silhouette graph (done)
-# TODO 6- show end cluster data
